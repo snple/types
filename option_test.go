@@ -4,7 +4,7 @@ import "testing"
 
 func TestOption(t *testing.T) {
 	if res := Some(123); res.IsSome() {
-		t.Log("the result is", res.Get())
+		t.Log("the result is", res.Unwrap())
 	} else {
 		panic("result should be some")
 	}
@@ -16,10 +16,10 @@ func TestOption(t *testing.T) {
 	}
 
 	if res := Some(123); res.IsSome() {
-		t.Log("the result is", res.Get())
+		t.Log("the result is", res.Unwrap())
 
 		take := res.Take()
-		t.Log("the result is", take.Get())
+		t.Log("the result is", take.Unwrap())
 		t.Log("the result is", res.IsNone())
 
 	} else {
@@ -27,11 +27,11 @@ func TestOption(t *testing.T) {
 	}
 
 	res := Some(456)
-	t.Log("the result is", res.Get())
+	t.Log("the result is", res.Unwrap())
 
 	res2 := res.Replace(789)
-	t.Log("the result is", res2.Get())
+	t.Log("the result is", res2.Unwrap())
 	res2 = Some(789)
-	t.Log("the result is", res2.Get())
-	t.Log("the result is", res.Get())
+	t.Log("the result is", res2.Unwrap())
+	t.Log("the result is", res.Unwrap())
 }

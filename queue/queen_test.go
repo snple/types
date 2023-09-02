@@ -10,11 +10,11 @@ func TestQueueSimple(t *testing.T) {
 	}
 	for i := 0; i < minQueueLen; i++ {
 		n := q.Peek()
-		if n.Get() != i {
+		if n.Unwrap() != i {
 			t.Error("peek", i, "had value", q.Peek())
 		}
 		x := q.Pop()
-		if x.Get() != i {
+		if x.Unwrap() != i {
 			t.Error("remove", i, "had value", x)
 		}
 	}
@@ -33,7 +33,7 @@ func TestQueueWrapping(t *testing.T) {
 
 	for i := 0; i < minQueueLen; i++ {
 		n := q.Peek()
-		if n.Get() != i+3 {
+		if n.Unwrap() != i+3 {
 			t.Error("peek", i, "had value", q.Peek())
 		}
 		q.Pop()
@@ -68,7 +68,7 @@ func TestQueueGet(t *testing.T) {
 		q.Push(i)
 		for j := 0; j < q.Length(); j++ {
 			n := q.Get(j)
-			if n.Get() != j {
+			if n.Unwrap() != j {
 				t.Errorf("index %d doesn't contain %d", j, j)
 			}
 		}
@@ -82,7 +82,7 @@ func TestQueueGetNegative(t *testing.T) {
 		q.Push(i)
 		for j := 1; j <= q.Length(); j++ {
 			n := q.Get(-j)
-			if n.Get() != q.Length()-j {
+			if n.Unwrap() != q.Length()-j {
 				t.Errorf("index %d doesn't contain %d", -j, q.Length()-j)
 			}
 		}
@@ -98,12 +98,12 @@ func TestQueueGetOutOfRangePanics(t *testing.T) {
 
 	assertPanics(t, "should panic when negative index", func() {
 		n := q.Get(-4)
-		n.Get()
+		n.Unwrap()
 	})
 
 	assertPanics(t, "should panic when index greater than length", func() {
 		n := q.Get(4)
-		n.Get()
+		n.Unwrap()
 	})
 }
 
@@ -112,7 +112,7 @@ func TestQueuePeekOutOfRangePanics(t *testing.T) {
 
 	assertPanics(t, "should panic when peeking empty queue", func() {
 		n := q.Peek()
-		n.Get()
+		n.Unwrap()
 	})
 
 	q.Push(1)
@@ -120,7 +120,7 @@ func TestQueuePeekOutOfRangePanics(t *testing.T) {
 
 	assertPanics(t, "should panic when peeking emptied queue", func() {
 		n := q.Peek()
-		n.Get()
+		n.Unwrap()
 	})
 }
 
@@ -129,7 +129,7 @@ func TestQueueRemoveOutOfRangePanics(t *testing.T) {
 
 	assertPanics(t, "should panic when removing empty queue", func() {
 		n := q.Pop()
-		n.Get()
+		n.Unwrap()
 	})
 
 	q.Push(1)
@@ -137,7 +137,7 @@ func TestQueueRemoveOutOfRangePanics(t *testing.T) {
 
 	assertPanics(t, "should panic when removing emptied queue", func() {
 		n := q.Pop()
-		n.Get()
+		n.Unwrap()
 	})
 }
 

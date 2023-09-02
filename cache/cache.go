@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"context"
 	"errors"
 	"sync"
 	"time"
@@ -33,10 +34,10 @@ func (v *Value[T]) Alive() bool {
 type Cache[T any] struct {
 	data map[string]Value[T]
 	lock sync.RWMutex
-	miss func(key string) (T, time.Duration, error)
+	miss func(ctx context.Context, key string) (T, time.Duration, error)
 }
 
-func NewCache[T any](miss func(key string) (T, time.Duration, error)) *Cache[T] {
+func NewCache[T any](miss func(ctx context.Context, key string) (T, time.Duration, error)) *Cache[T] {
 	return &Cache[T]{
 		data: make(map[string]Value[T]),
 		lock: sync.RWMutex{},
@@ -66,13 +67,13 @@ func (c *Cache[T]) Get(key string) types.Option[T] {
 	return types.None[T]()
 }
 
-func (c *Cache[T]) GetWithMiss(key string) (types.Option[T], error) {
+func (c *Cache[T]) GetWithMiss(ctx context.Context, key string) (types.Option[T], error) {
 	if v := c.Get(key); v.IsSome() {
 		return v, nil
 	}
 
 	if c.miss != nil {
-		value, ttl, err := c.miss(key)
+		value, ttl, err := c.miss(ctx, key)
 		if err != nil {
 			return types.None[T](), err
 		}
