@@ -19,7 +19,7 @@ type Value[T any] struct {
 	Updated time.Time
 }
 
-func newValue[T any](data T, ttl time.Duration) Value[T] {
+func NewValue[T any](data T, ttl time.Duration) Value[T] {
 	return Value[T]{
 		Data:    data,
 		TTL:     ttl,
@@ -89,7 +89,7 @@ func (c *Cache[T]) Set(key string, value T, ttl time.Duration) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	c.data[key] = newValue(value, ttl)
+	c.data[key] = NewValue(value, ttl)
 }
 
 func (c *Cache[T]) AutoSet(key string, fn func(key string) (T, time.Duration, error), duration time.Duration) chan<- struct{} {
