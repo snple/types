@@ -31,7 +31,18 @@ func TestOption(t *testing.T) {
 
 	res2 := res.Replace(789)
 	t.Log("the result is", res2.Unwrap())
+
+	if res.Unwrap() != 789 {
+		panic("result should be 789")
+	}
+
+	if res2.Unwrap() != 456 {
+		panic("result should be 456")
+	}
+
 	res2 = Some(789)
-	t.Log("the result is", res2.Unwrap())
-	t.Log("the result is", res.Unwrap())
+
+	if res2.Unwrap() != 789 {
+		panic("result should be 789")
+	}
 }

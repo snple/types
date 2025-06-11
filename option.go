@@ -32,7 +32,7 @@ func (o *Option[T]) Unwrap() T {
 	return *o.value
 }
 
-func (o *Option[T]) Unchecked(msg string) *T {
+func (o *Option[T]) Unchecked() *T {
 	return o.value
 }
 
@@ -55,9 +55,7 @@ func (o *Option[T]) Take() Option[T] {
 func (o *Option[T]) Replace(value T) Option[T] {
 	tmp := *o
 
-	o = &Option[T]{
-		value: o.value,
-	}
+	o.value = &value
 
 	return tmp
 }

@@ -13,39 +13,39 @@ var (
 	ErrNotFound = errors.New("cache: key not found")
 )
 
-type Value[T any] struct {
-	Data    T
+type Value[V any] struct {
+	Data    V
 	TTL     time.Duration
 	Updated time.Time
 }
 
-func NewValue[T any](data T, ttl time.Duration) Value[T] {
-	return Value[T]{
+func NewValue[V any](data V, ttl time.Duration) Value[V] {
+	return Value[V]{
 		Data:    data,
 		TTL:     ttl,
 		Updated: time.Now(),
 	}
 }
 
-func (v *Value[T]) Alive() bool {
+func (v *Value[V]) Alive() bool {
 	return v != nil && (v.TTL == 0 || time.Since(v.Updated) <= v.TTL)
 }
 
-type Cache[T any] struct {
-	data map[string]Value[T]
+type Cache[K comparable, V any] struct {
+	data map[K]Value[V]
 	lock sync.RWMutex
-	miss func(ctx context.Context, key string) (T, time.Duration, error)
+	miss func(ctx context.Context, key K) (V, time.Duration, error)
 }
 
-func NewCache[T any](miss func(ctx context.Context, key string) (T, time.Duration, error)) *Cache[T] {
-	return &Cache[T]{
-		data: make(map[string]Value[T]),
+func NewCache[K comparable, V any](miss func(ctx context.Context, key K) (V, time.Duration, error)) *Cache[K, V] {
+	return &Cache[K, V]{
+		data: make(map[K]Value[V]),
 		lock: sync.RWMutex{},
 		miss: miss,
 	}
 }
 
-func (c *Cache[T]) GetValue(key string) types.Option[Value[T]] {
+func (c *Cache[K, V]) GetValue(key K) types.Option[Value[V]] {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
@@ -53,21 +53,20 @@ func (c *Cache[T]) GetValue(key string) types.Option[Value[T]] {
 		return types.Some(value)
 	}
 
-	return types.None[Value[T]]()
+	return types.None[Value[V]]()
 }
 
-func (c *Cache[T]) Get(key string) types.Option[T] {
+func (c *Cache[K, V]) Get(key K) types.Option[V] {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
 	if value, ok := c.data[key]; ok && value.Alive() {
 		return types.Some(value.Data)
 	}
-
-	return types.None[T]()
+	return types.None[V]()
 }
 
-func (c *Cache[T]) GetWithMiss(ctx context.Context, key string) (types.Option[T], error) {
+func (c *Cache[K, V]) GetWithMiss(ctx context.Context, key K) (types.Option[V], error) {
 	if v := c.Get(key); v.IsSome() {
 		return v, nil
 	}
@@ -75,24 +74,24 @@ func (c *Cache[T]) GetWithMiss(ctx context.Context, key string) (types.Option[T]
 	if c.miss != nil {
 		value, ttl, err := c.miss(ctx, key)
 		if err != nil {
-			return types.None[T](), err
+			return types.None[V](), err
 		}
 
 		c.Set(key, value, ttl)
 		return types.Some(value), nil
 	}
 
-	return types.None[T](), ErrNotFound
+	return types.None[V](), ErrNotFound
 }
 
-func (c *Cache[T]) Set(key string, value T, ttl time.Duration) {
+func (c *Cache[K, V]) Set(key K, value V, ttl time.Duration) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
 	c.data[key] = NewValue(value, ttl)
 }
 
-func (c *Cache[T]) AutoSet(key string, fn func(key string) (T, time.Duration, error), duration time.Duration) chan<- struct{} {
+func (c *Cache[K, V]) AutoSet(key K, fn func(key K) (V, time.Duration, error), duration time.Duration) chan<- struct{} {
 	quit := make(chan struct{})
 
 	go func() {
@@ -114,25 +113,25 @@ func (c *Cache[T]) AutoSet(key string, fn func(key string) (T, time.Duration, er
 	return quit
 }
 
-func (c *Cache[T]) Delete(key string) {
+func (c *Cache[K, V]) Delete(key K) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 	delete(c.data, key)
 }
 
-func (c *Cache[T]) DeleteAll() {
+func (c *Cache[K, V]) DeleteAll() {
 	c.lock.Lock()
 	defer c.lock.Unlock()
-	c.data = make(map[string]Value[T])
+	c.data = make(map[K]Value[V])
 }
 
-func (c *Cache[T]) Size() int {
+func (c *Cache[K, V]) Size() int {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 	return len(c.data)
 }
 
-func (c *Cache[T]) GC() {
+func (c *Cache[K, V]) GC() {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
@@ -143,7 +142,7 @@ func (c *Cache[T]) GC() {
 	}
 }
 
-func (c *Cache[T]) AutoGC(duration time.Duration) chan<- struct{} {
+func (c *Cache[K, V]) AutoGC(duration time.Duration) chan<- struct{} {
 	quit := make(chan struct{})
 
 	go func() {
